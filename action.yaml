@@ -1,4 +1,5 @@
 name: Terraform
+description: "Action to run terraform plan and apply on STACKIT infrastructure"
 
 inputs:
   terraform_module:
@@ -25,25 +26,31 @@ inputs:
 
 runs:
   using: "composite"
-  env:
-    STACKIT_SERVICE_ACCOUNT_KEY_PATH: ${{ github.workspace }}/stackit-credentials.json
-    AWS_ACCESS_KEY_ID: ${{ inputs.BACKEND_ACCESS_KEY_ID }}
-    AWS_SECRET_ACCESS_KEY: ${{ inputs.BACKEND_SECRET_ACCESS_KEY }}
   steps:
     - name: "Install terraform"
       uses: digitalservicebund/setup-terraform@main
+
     - name: "Setup STACKIT Credentials"
       env:
         STACKIT_SERVICE_ACCOUNT_KEY: ${{ inputs.STACKIT_SERVICE_ACCOUNT_KEY }}
         STACKIT_SERVICE_ACCOUNT_KEY_PATH: ${{ github.workspace }}/stackit-credentials.json
       run: echo "$STACKIT_SERVICE_ACCOUNT_KEY" > $STACKIT_SERVICE_ACCOUNT_KEY_PATH
+
     - name: "Terraform init"
+      env:
+        AWS_ACCESS_KEY_ID: ${{ inputs.BACKEND_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ inputs.BACKEND_SECRET_ACCESS_KEY }}
       working-directory: terraform/${{ inputs.project_directory }}${{ inputs.terraform_module }}
       run: terraform init -input=false
+
     - name: "Terraform plan"
+      env:
+        AWS_ACCESS_KEY_ID: ${{ inputs.BACKEND_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ inputs.BACKEND_SECRET_ACCESS_KEY }}
       working-directory: terraform/${{ inputs.project_directory }}${{ inputs.terraform_module }}
       run: |
         terraform plan -lock=false -out .planfile
+
     - name: "Post PR comment"
       if: ${{ github.event_name == 'pull_request' }}
       uses: borchero/terraform-plan-comment@434458316f8f24dd073cd2561c436cce41dc8f34 # v2.4.1
@@ -53,87 +60,12 @@ runs:
         header: 📝 Terraform Plan for ${{ inputs.project_directory }}${{ inputs.terraform_module }}
         working-directory: terraform/${{ inputs.project_directory }}${{ inputs.terraform_module }}
         skip-empty: true
+
     - name: "Terraform apply"
-      if: github.ref == 'refs/heads/main'
+      if: ${{ github.ref == 'refs/heads/main' }}
+      env:
+        AWS_ACCESS_KEY_ID: ${{ inputs.BACKEND_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ inputs.BACKEND_SECRET_ACCESS_KEY }}
       working-directory: terraform/${{ inputs.project_directory }}${{ inputs.terraform_module }}
       run: |
         terraform apply -auto-approve
-
-
-#on:
-#  workflow_call:
-#    inputs:
-#      terraform_module:
-#        description: "Terraform module to run terraform in"
-#        required: true
-#        type: string
-#      project_directory:
-#        description: "Name of the directory that contains the terraform module. Should end with '/'"
-#        required: false
-#        type: string
-#    secrets:
-#      STACKIT_SERVICE_ACCOUNT_KEY:
-#        description: "Credentials of a STACKIT Service Account Key that is used to authenticate against the STACKIT API"
-#        required: true
-#      BACKEND_ACCESS_KEY_ID:
-#        description: "Access Key for the terraform backend bucket"
-#        required: true
-#      BACKEND_SECRET_ACCESS_KEY:
-#        description: "Secret Access Key for the terraform backend bucket"
-#        required: true
-#
-#env:
-#  STACKIT_SERVICE_ACCOUNT_KEY_PATH: ${{ github.workspace }}/stackit-credentials.json
-#  AWS_ACCESS_KEY_ID: ${{ secrets.BACKEND_ACCESS_KEY_ID }}
-#  AWS_SECRET_ACCESS_KEY: ${{ secrets.BACKEND_SECRET_ACCESS_KEY }}
-#
-#jobs:
-#  plan:
-#    runs-on: ubuntu-latest
-#    steps:
-#      - name: "Checkout code"
-#        uses: actions/checkout@v5
-#      - name: "Install terraform"
-#        uses: digitalservicebund/setup-terraform@adfabd79951446bc3078797c9cce4511328a8573 # v1.1.2
-#      - name: "Setup STACKIT Credentials"
-#        env:
-#          STACKIT_SERVICE_ACCOUNT_KEY: ${{ secrets.STACKIT_SERVICE_ACCOUNT_KEY }}
-#        run: echo "$STACKIT_SERVICE_ACCOUNT_KEY" > $STACKIT_SERVICE_ACCOUNT_KEY_PATH
-#      - name: "Terraform init"
-#        working-directory: terraform/${{ inputs.project_directory }}${{ inputs.terraform_module }}
-#        run: terraform init -input=false
-#      - name: "Terraform plan"
-#        working-directory: terraform/${{ inputs.project_directory }}${{ inputs.terraform_module }}
-#        run: |
-#          terraform plan -lock=false -out .planfile
-#      - name: "Post PR comment"
-#        uses: borchero/terraform-plan-comment@434458316f8f24dd073cd2561c436cce41dc8f34 # v2.4.1
-#        with:
-#          token: ${{ github.token }}
-#          planfile: .planfile
-#          header: 📝 Terraform Plan for ${{ inputs.project_directory }}${{ inputs.terraform_module }}
-#          working-directory: terraform/${{ inputs.project_directory }}${{ inputs.terraform_module }}
-#          skip-empty: true
-#
-#  apply:
-#    if: github.ref == 'refs/heads/main'
-#    runs-on: ubuntu-latest
-#    needs: plan
-#    concurrency:
-#      group: ${{ inputs.project_directory }}-${{ inputs.terraform_module }}-apply
-#    steps:
-#      - name: "Checkout code"
-#        uses: actions/checkout@v5
-#      - name: "Install terraform"
-#        uses: digitalservicebund/setup-terraform@adfabd79951446bc3078797c9cce4511328a8573 # v1.1.2
-#      - name: "Setup STACKIT Credentials"
-#        env:
-#          STACKIT_SERVICE_ACCOUNT_KEY: ${{ secrets.STACKIT_SERVICE_ACCOUNT_KEY }}
-#        run: echo "$STACKIT_SERVICE_ACCOUNT_KEY" > $STACKIT_SERVICE_ACCOUNT_KEY_PATH
-#      - name: "Terraform init"
-#        working-directory: terraform/${{ inputs.project_directory }}${{ inputs.terraform_module }}
-#        run: terraform init -input=false
-#      - name: "Terraform apply"
-#        working-directory: terraform/${{ inputs.project_directory }}${{ inputs.terraform_module }}
-#        run: |
-#          terraform apply -auto-approve
