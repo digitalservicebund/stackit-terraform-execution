@@ -5,11 +5,11 @@ inputs:
   terraform_module:
     description: "Terraform module to run terraform in"
     required: true
-    default: terraform
+    default: "terraform"
   project_directory:
     description: "Name of the directory that contains the terraform module. Should end with '/'"
     required: false
-    default: "/"
+    default: ""
   terraform_command:
     description: "Terraform command to run (plan/apply)"
     required: false
@@ -41,7 +41,7 @@ runs:
       env:
         AWS_ACCESS_KEY_ID: ${{ inputs.BACKEND_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ inputs.BACKEND_SECRET_ACCESS_KEY }}
-      working-directory: terraform/${{ inputs.project_directory }}${{ inputs.terraform_module }}
+      working-directory: ${{ inputs.project_directory }}${{ inputs.terraform_module }}
       shell: bash
       run: terraform init -input=false
 
@@ -49,7 +49,7 @@ runs:
       env:
         AWS_ACCESS_KEY_ID: ${{ inputs.BACKEND_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ inputs.BACKEND_SECRET_ACCESS_KEY }}
-      working-directory: terraform/${{ inputs.project_directory }}${{ inputs.terraform_module }}
+      working-directory: ${{ inputs.project_directory }}${{ inputs.terraform_module }}
       shell: bash
       run: |
         terraform plan -lock=false -out .planfile
@@ -61,7 +61,7 @@ runs:
         token: ${{ github.token }}
         planfile: .planfile
         header: 📝 Terraform Plan for ${{ inputs.project_directory }}${{ inputs.terraform_module }}
-        working-directory: terraform/${{ inputs.project_directory }}${{ inputs.terraform_module }}
+        working-directory: ${{ inputs.project_directory }}${{ inputs.terraform_module }}
         skip-empty: true
 
     - name: "Terraform apply"
@@ -69,7 +69,7 @@ runs:
       env:
         AWS_ACCESS_KEY_ID: ${{ inputs.BACKEND_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ inputs.BACKEND_SECRET_ACCESS_KEY }}
-      working-directory: terraform/${{ inputs.project_directory }}${{ inputs.terraform_module }}
+      working-directory: ${{ inputs.project_directory }}${{ inputs.terraform_module }}
       shell: bash
       run: |
         terraform apply -auto-approve
