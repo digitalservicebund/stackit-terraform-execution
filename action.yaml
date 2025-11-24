@@ -10,10 +10,6 @@ inputs:
     description: "Name of the directory that contains the terraform module. Should end with '/'"
     required: false
     default: ""
-  terraform_command:
-    description: "Terraform command to run (plan/apply)"
-    required: false
-    default: "plan"
   STACKIT_SERVICE_ACCOUNT_KEY:
     description: "Credentials of a STACKIT Service Account Key that is used to authenticate against the STACKIT API"
     required: true
@@ -47,6 +43,7 @@ runs:
       run: terraform init -input=false
 
     - name: "Terraform plan"
+      if: ${{ github.event_name == 'pull_request' }}
       env:
         AWS_ACCESS_KEY_ID: ${{ inputs.BACKEND_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ inputs.BACKEND_SECRET_ACCESS_KEY }}

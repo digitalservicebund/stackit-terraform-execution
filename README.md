@@ -1,0 +1,73 @@
+# STACKIT Terraform Execution Action
+
+A GitHub Action for executing Terraform operations (plan and apply) on STACKIT infrastructure. This action streamlines infrastructure automation by handling authentication, initialization, planning, and deployment of Terraform configurations to STACKIT.
+
+## Features
+
+- 🏗️ Automatic Terraform initialization with backend configuration
+- 📋 Terraform plan execution with automatic PR comments in Pull-Requests
+- ✅ Terraform apply on main branch
+- 🔐 Secure credential management for STACKIT Object Storage terraform backend
+- 🔧 Flexible module targeting with optional project directory configuration
+
+## Inputs
+
+| Input | Description | Required | Default |
+|-------|-------------|----------|---------|
+| `terraform_module` | Terraform module to run terraform in | ✅ | `terraform` |
+| `project_directory` | Directory containing the terraform module (should end with '/') | ❌ | Empty string |
+| `STACKIT_SERVICE_ACCOUNT_KEY` | STACKIT Service Account Key credentials (JSON) | ✅ | N/A |
+| `BACKEND_ACCESS_KEY_ID` | Access Key for the terraform backend bucket | ✅ | N/A |
+| `BACKEND_SECRET_ACCESS_KEY` | Secret Access Key for the terraform backend bucket | ✅ | N/A |
+
+## Usage
+
+### Basic Example
+
+```yaml
+- name: Terraform Plan & Apply
+  uses: digitalservicebund/stackit-terraform-execution@v1
+  with:
+    terraform_module: 'terraform'
+    STACKIT_SERVICE_ACCOUNT_KEY: ${{ secrets.STACKIT_SERVICE_ACCOUNT_KEY }}
+    BACKEND_ACCESS_KEY_ID: ${{ secrets.BACKEND_ACCESS_KEY_ID }}
+    BACKEND_SECRET_ACCESS_KEY: ${{ secrets.BACKEND_SECRET_ACCESS_KEY }}
+```
+
+### With Project Directory
+
+```yaml
+- name: Terraform Plan & Apply
+  uses: digitalservicebund/stackit-terraform-execution@v1
+  with:
+    project_directory: 'terraform/'
+    terraform_module: 'prod'
+    STACKIT_SERVICE_ACCOUNT_KEY: ${{ secrets.STACKIT_SERVICE_ACCOUNT_KEY }}
+    BACKEND_ACCESS_KEY_ID: ${{ secrets.BACKEND_ACCESS_KEY_ID }}
+    BACKEND_SECRET_ACCESS_KEY: ${{ secrets.BACKEND_SECRET_ACCESS_KEY }}
+```
+
+## How It Works
+
+### Workflow Steps
+
+1. **Install Terraform**: Installs Terraform based on a .terraform_version file using the `digitalservicebund/setup-terraform` action
+2. **Setup STACKIT Credentials**: Writes the STACKIT service account key to a temporary file for authentication
+3. **Terraform Init**: Initializes the Terraform working directory with backend configuration
+4. **Terraform Plan** (Pull Request only):Generates an execution plan showing what changes will be made
+5. **Post PR Comment** (Pull Request only): Automatically posts the Terraform plan as a comment on the pull request for review
+6. **Terraform Apply** (Main branch only): Automatically applies the changes to your STACKIT infrastructure when merged to main
+
+### Execution Conditions
+
+- **Pull Requests**: Runs `terraform plan` and posts results as a comment for review
+- **Main Branch**: Runs `terraform apply` automatically
+
+## License
+
+See the [LICENSE](LICENSE) file for details.
+
+## Support
+
+For issues or questions, please open an issue in the repository.
+
