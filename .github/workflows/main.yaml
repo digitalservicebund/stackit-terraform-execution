@@ -1,0 +1,19 @@
+name: Test
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+      - name: Test action
+        uses: ./
+        with:
+          BACKEND_ACCESS_KEY_ID: ''
+          BACKEND_SECRET_ACCESS_KEY: ''
+          STACKIT_SERVICE_ACCOUNT_KEY: ''
+          terraform_module: 'test'
