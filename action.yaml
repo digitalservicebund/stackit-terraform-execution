@@ -41,6 +41,7 @@ runs:
       env:
         AWS_ACCESS_KEY_ID: ${{ inputs.BACKEND_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ inputs.BACKEND_SECRET_ACCESS_KEY }}
+        STACKIT_SERVICE_ACCOUNT_KEY_PATH: ${{ github.workspace }}/stackit-credentials.json
       working-directory: ${{ inputs.project_directory }}${{ inputs.terraform_module }}
       shell: bash
       run: terraform init -input=false
@@ -49,6 +50,7 @@ runs:
       env:
         AWS_ACCESS_KEY_ID: ${{ inputs.BACKEND_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ inputs.BACKEND_SECRET_ACCESS_KEY }}
+        STACKIT_SERVICE_ACCOUNT_KEY_PATH: ${{ github.workspace }}/stackit-credentials.json
       working-directory: ${{ inputs.project_directory }}${{ inputs.terraform_module }}
       shell: bash
       run: |
@@ -69,6 +71,7 @@ runs:
       env:
         AWS_ACCESS_KEY_ID: ${{ inputs.BACKEND_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ inputs.BACKEND_SECRET_ACCESS_KEY }}
+        STACKIT_SERVICE_ACCOUNT_KEY_PATH: ${{ github.workspace }}/stackit-credentials.json
       working-directory: ${{ inputs.project_directory }}${{ inputs.terraform_module }}
       shell: bash
       run: |
