@@ -63,6 +63,15 @@ runs:
         working-directory: ${{ inputs.project_directory }}${{ inputs.terraform_module }}
         skip-empty: true
 
+    - name: "Prevent merge if files are recreated by terraform"
+      if: ${{ github.event_name == 'pull_request' }}
+      shell: bash
+      run: |
+        if terraform show -no-color .planfile | grep -Fq "# DO NOT EDIT MANUALLY"; then
+          echo "❌ The Terraform plan contains resources marked with '# DO NOT EDIT MANUALLY'. This configuration must be executed locally."
+          exit 1
+        fi
+
     - name: "Terraform apply"
       if: ${{ github.ref == 'refs/heads/main' }}
       env:
