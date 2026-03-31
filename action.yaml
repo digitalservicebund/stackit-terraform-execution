@@ -24,7 +24,7 @@ runs:
   using: "composite"
   steps:
     - name: "Install terraform"
-      uses: digitalservicebund/setup-terraform@main
+      uses: digitalservicebund/setup-terraform@5c1c0975e27a38fc422c25d6abf7707e45ad9308
 
     - name: "Setup STACKIT Credentials"
       env:
