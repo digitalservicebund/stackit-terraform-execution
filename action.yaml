@@ -24,7 +24,7 @@ runs:
   using: "composite"
   steps:
     - name: "Install terraform"
-      uses: digitalservicebund/setup-terraform@5c1c0975e27a38fc422c25d6abf7707e45ad9308
+      uses: digitalservicebund/setup-terraform@400976bd246bef1e51fe73695fe7658ce484bc43
 
     - name: "Setup STACKIT Credentials"
       env:
@@ -55,7 +55,7 @@ runs:
 
     - name: "Post PR comment"
       if: ${{ github.event_name == 'pull_request' }}
-      uses: borchero/terraform-plan-comment@434458316f8f24dd073cd2561c436cce41dc8f34 # v2.4.1
+      uses: borchero/terraform-plan-comment@d177dfb833ccfb6ef6022700796190dfe54830f1 # v3.0.0
       with:
         token: ${{ github.token }}
         planfile: .planfile
