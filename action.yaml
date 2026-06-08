@@ -26,18 +26,11 @@ runs:
     - name: "Install terraform"
       uses: digitalservicebund/setup-terraform@400976bd246bef1e51fe73695fe7658ce484bc43
 
-    - name: "Setup STACKIT Credentials"
-      env:
-        STACKIT_SERVICE_ACCOUNT_KEY: ${{ inputs.STACKIT_SERVICE_ACCOUNT_KEY }}
-        STACKIT_SERVICE_ACCOUNT_KEY_PATH: ${{ github.workspace }}/stackit-credentials.json
-      shell: bash
-      run: echo "$STACKIT_SERVICE_ACCOUNT_KEY" > $STACKIT_SERVICE_ACCOUNT_KEY_PATH
-
     - name: "Terraform init"
       env:
         AWS_ACCESS_KEY_ID: ${{ inputs.BACKEND_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ inputs.BACKEND_SECRET_ACCESS_KEY }}
-        STACKIT_SERVICE_ACCOUNT_KEY_PATH: ${{ github.workspace }}/stackit-credentials.json
+        STACKIT_SERVICE_ACCOUNT_KEY: ${{ inputs.STACKIT_SERVICE_ACCOUNT_KEY }}
       working-directory: ${{ inputs.project_directory }}${{ inputs.terraform_module }}
       shell: bash
       run: terraform init -input=false
@@ -47,7 +40,7 @@ runs:
       env:
         AWS_ACCESS_KEY_ID: ${{ inputs.BACKEND_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ inputs.BACKEND_SECRET_ACCESS_KEY }}
-        STACKIT_SERVICE_ACCOUNT_KEY_PATH: ${{ github.workspace }}/stackit-credentials.json
+        STACKIT_SERVICE_ACCOUNT_KEY: ${{ inputs.STACKIT_SERVICE_ACCOUNT_KEY }}
       working-directory: ${{ inputs.project_directory }}${{ inputs.terraform_module }}
       shell: bash
       run: |
@@ -77,7 +70,7 @@ runs:
       env:
         AWS_ACCESS_KEY_ID: ${{ inputs.BACKEND_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ inputs.BACKEND_SECRET_ACCESS_KEY }}
-        STACKIT_SERVICE_ACCOUNT_KEY_PATH: ${{ github.workspace }}/stackit-credentials.json
+        STACKIT_SERVICE_ACCOUNT_KEY: ${{ inputs.STACKIT_SERVICE_ACCOUNT_KEY }}
       working-directory: ${{ inputs.project_directory }}${{ inputs.terraform_module }}
       shell: bash
       run: |
