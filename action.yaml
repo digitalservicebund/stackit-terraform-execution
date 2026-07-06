@@ -12,7 +12,11 @@ inputs:
     default: ""
   STACKIT_SERVICE_ACCOUNT_KEY:
     description: "Credentials of a STACKIT Service Account Key that is used to authenticate against the STACKIT API"
-    required: true
+    required: false
+  STACKIT_SERVICE_ACCOUNT_EMAIL:
+    description: "Email of a STACKIT Service Account that should be used to authenticate against the STACKIT API"
+    required: false
+    default: ""
   BACKEND_ACCESS_KEY_ID:
     description: "Access Key for the terraform backend bucket"
     required: true
@@ -23,10 +27,20 @@ inputs:
 runs:
   using: "composite"
   steps:
+      # Either STACKIT_SERVICE_ACCOUNT_KEY or STACKIT_SERVICE_ACCOUNT_EMAIL must be set
+    - name: "Check configuration"
+      shell: bash
+      run: |
+        if [[ -z "${{ inputs.STACKIT_SERVICE_ACCOUNT_KEY }}" && -z "${{ inputs.STACKIT_SERVICE_ACCOUNT_EMAIL }}" ]]; then
+          echo "Either STACKIT_SERVICE_ACCOUNT_KEY or STACKIT_SERVICE_ACCOUNT_EMAIL must be set"
+          exit 1
+        fi
+
     - name: "Install terraform"
       uses: digitalservicebund/setup-terraform@400976bd246bef1e51fe73695fe7658ce484bc43
 
     - name: "Terraform init"
+      if: ${{ STACKIT_SERVICE_ACCOUNT_EMAIL == '' }}
       env:
         AWS_ACCESS_KEY_ID: ${{ inputs.BACKEND_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ inputs.BACKEND_SECRET_ACCESS_KEY }}
@@ -35,12 +49,35 @@ runs:
       shell: bash
       run: terraform init -input=false
 
+    - name: "Terraform init"
+      if: ${{ STACKIT_SERVICE_ACCOUNT_EMAIL != '' }}
+      env:
+        AWS_ACCESS_KEY_ID: ${{ inputs.BACKEND_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ inputs.BACKEND_SECRET_ACCESS_KEY }}
+        STACKIT_SERVICE_ACCOUNT_EMAIL: ${{ inputs.STACKIT_SERVICE_ACCOUNT_EMAIL }}
+        STACKIT_USE_OIDC: "1"
+      working-directory: ${{ inputs.project_directory }}${{ inputs.terraform_module }}
+      shell: bash
+      run: terraform init -input=false
+
     - name: "Terraform plan"
-      if: ${{ github.event_name == 'pull_request' }}
+      if: ${{ github.event_name == 'pull_request' && STACKIT_SERVICE_ACCOUNT_EMAIL == '' }}
       env:
         AWS_ACCESS_KEY_ID: ${{ inputs.BACKEND_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ inputs.BACKEND_SECRET_ACCESS_KEY }}
         STACKIT_SERVICE_ACCOUNT_KEY: ${{ inputs.STACKIT_SERVICE_ACCOUNT_KEY }}
+      working-directory: ${{ inputs.project_directory }}${{ inputs.terraform_module }}
+      shell: bash
+      run: |
+        terraform plan -lock=false -out .planfile
+
+    - name: "Terraform plan"
+      if: ${{ github.event_name == 'pull_request' && STACKIT_SERVICE_ACCOUNT_EMAIL != '' }}
+      env:
+        AWS_ACCESS_KEY_ID: ${{ inputs.BACKEND_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ inputs.BACKEND_SECRET_ACCESS_KEY }}
+        STACKIT_SERVICE_ACCOUNT_EMAIL: ${{ inputs.STACKIT_SERVICE_ACCOUNT_EMAIL }}
+        STACKIT_USE_OIDC: "1"
       working-directory: ${{ inputs.project_directory }}${{ inputs.terraform_module }}
       shell: bash
       run: |
@@ -66,11 +103,23 @@ runs:
         fi
 
     - name: "Terraform apply"
-      if: ${{ github.ref == 'refs/heads/main' }}
+      if: ${{ github.ref == 'refs/heads/main' && STACKIT_SERVICE_ACCOUNT_EMAIL == ''}}
       env:
         AWS_ACCESS_KEY_ID: ${{ inputs.BACKEND_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ inputs.BACKEND_SECRET_ACCESS_KEY }}
         STACKIT_SERVICE_ACCOUNT_KEY: ${{ inputs.STACKIT_SERVICE_ACCOUNT_KEY }}
+      working-directory: ${{ inputs.project_directory }}${{ inputs.terraform_module }}
+      shell: bash
+      run: |
+        terraform apply -auto-approve
+
+    - name: "Terraform apply"
+      if: ${{ github.ref == 'refs/heads/main' && STACKIT_SERVICE_ACCOUNT_EMAIL != ''}}
+      env:
+        AWS_ACCESS_KEY_ID: ${{ inputs.BACKEND_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ inputs.BACKEND_SECRET_ACCESS_KEY }}
+        STACKIT_SERVICE_ACCOUNT_EMAIL: ${{ inputs.STACKIT_SERVICE_ACCOUNT_EMAIL }}
+        STACKIT_USE_OIDC: "1"
       working-directory: ${{ inputs.project_directory }}${{ inputs.terraform_module }}
       shell: bash
       run: |

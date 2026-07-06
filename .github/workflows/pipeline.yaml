@@ -22,3 +22,14 @@ jobs:
           BACKEND_SECRET_ACCESS_KEY: 'backend_secret_access_key'
           STACKIT_SERVICE_ACCOUNT_KEY: 'stackit_service_account_key'
           terraform_module: 'test'
+
+  test-validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - name: Test action validation
+        uses: ./
+        with:
+          BACKEND_ACCESS_KEY_ID: 'backend_access_key_id'
+          BACKEND_SECRET_ACCESS_KEY: 'backend_secret_access_key'
+          terraform_module: 'test'
