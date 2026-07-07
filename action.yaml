@@ -29,9 +29,12 @@ runs:
   steps:
       # Either STACKIT_SERVICE_ACCOUNT_KEY or STACKIT_SERVICE_ACCOUNT_EMAIL must be set
     - name: "Check configuration"
+      env:
+        STACKIT_SERVICE_ACCOUNT_KEY: ${{ inputs.STACKIT_SERVICE_ACCOUNT_KEY }}
+        STACKIT_SERVICE_ACCOUNT_EMAIL: ${{ inputs.STACKIT_SERVICE_ACCOUNT_EMAIL }}
       shell: bash
       run: |
-        if [[ -z "${{ inputs.STACKIT_SERVICE_ACCOUNT_KEY }}" && -z "${{ inputs.STACKIT_SERVICE_ACCOUNT_EMAIL }}" ]]; then
+        if [[ -z "${STACKIT_SERVICE_ACCOUNT_KEY:-}" && -z "${STACKIT_SERVICE_ACCOUNT_EMAIL:-}" ]]; then
           echo "Either STACKIT_SERVICE_ACCOUNT_KEY or STACKIT_SERVICE_ACCOUNT_EMAIL must be set"
           exit 1
         fi
