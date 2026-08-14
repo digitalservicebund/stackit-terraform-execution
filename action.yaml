@@ -69,7 +69,7 @@ runs:
       run: terraform init -input=false
 
     - name: "Terraform plan"
-      if: ${{ github.event_name == 'pull_request' }}
+      if: ${{ github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' }}
       working-directory: ${{ inputs.project_directory }}${{ inputs.terraform_module }}
       shell: bash
       run: terraform plan -lock=false -out .planfile
@@ -85,7 +85,7 @@ runs:
         skip-empty: true
 
     - name: "Prevent merge if files are recreated by terraform"
-      if: ${{ github.event_name == 'pull_request' }}
+      if: ${{ github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' }}
       working-directory: ${{ inputs.project_directory }}${{ inputs.terraform_module }}
       shell: bash
       run: |

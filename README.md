@@ -57,7 +57,7 @@ A GitHub Action for executing Terraform operations (plan and apply) on STACKIT i
 3. **Terraform Init**: Initializes the Terraform working directory with backend configuration
 4. **Terraform Plan** (Pull Request and workflow dispatch): Generates an execution plan showing what changes will be made
 5. **Post PR Comment** (Pull Request only): Automatically posts the Terraform plan as a comment on the pull request for review
-6. **Prevent merge if files are recreated by terraform** (Pull Request only): Checks that no files would be changed in the directory when this plan is applied.
+6. **Prevent merge if files are recreated by terraform** (Pull Request and workflow dispatch): Checks that no files would be changed in the directory when this plan is applied.
 7. **Terraform Apply** (Main branch only): Automatically applies the changes to your STACKIT infrastructure when merged to main
 
 ### Execution Conditions
