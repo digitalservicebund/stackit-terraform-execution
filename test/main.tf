@@ -9,7 +9,12 @@ terraform {
 
 resource "null_resource" "service_account_key" {
   provisioner "local-exec" {
-    command = "cat $STACKIT_SERVICE_ACCOUNT_KEY_PATH"
+    command = "echo \"$STACKIT_SERVICE_ACCOUNT_KEY\""
+  }
+}
+resource "null_resource" "service_account_email" {
+  provisioner "local-exec" {
+    command = "echo \"$STACKIT_SERVICE_ACCOUNT_EMAIL / $STACKIT_USE_OIDC\""
   }
 }
 resource "null_resource" "backend_key_id" {

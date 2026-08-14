@@ -5,13 +5,15 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
   pull-requests: write
+  id-token: write
 
 jobs:
-  test:
+  test-service-account-key:
     runs-on: ubuntu-latest
 
     steps:
@@ -23,6 +25,35 @@ jobs:
           BACKEND_SECRET_ACCESS_KEY: 'backend_secret_access_key'
           STACKIT_SERVICE_ACCOUNT_KEY: 'stackit_service_account_key'
           terraform_module: 'test'
+      - name: Verify exported credentials
+        run: |
+          [ "$AWS_ACCESS_KEY_ID" = 'backend_access_key_id' ] || { echo "✗ AWS_ACCESS_KEY_ID not set"; exit 1; }
+          [ "$AWS_SECRET_ACCESS_KEY" = 'backend_secret_access_key' ] || { echo "✗ AWS_SECRET_ACCESS_KEY not set"; exit 1; }
+          [ "$STACKIT_SERVICE_ACCOUNT_KEY" = 'stackit_service_account_key' ] || { echo "✗ STACKIT_SERVICE_ACCOUNT_KEY not set"; exit 1; }
+          [ -z "${STACKIT_USE_OIDC:-}" ] || { echo "✗ STACKIT_USE_OIDC should not be set"; exit 1; }
+          [ -z "${STACKIT_SERVICE_ACCOUNT_EMAIL:-}" ] || { echo "✗ STACKIT_SERVICE_ACCOUNT_EMAIL should not be set"; exit 1; }
+          echo "✓ Service account key credentials exported correctly"
+
+  test-service-account-email:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
+      - name: Test action
+        uses: ./
+        with:
+          BACKEND_ACCESS_KEY_ID: 'backend_access_key_id'
+          BACKEND_SECRET_ACCESS_KEY: 'backend_secret_access_key'
+          STACKIT_SERVICE_ACCOUNT_EMAIL: 'service-account@sa.stackit.cloud'
+          terraform_module: 'test'
+      - name: Verify exported credentials
+        run: |
+          [ "$AWS_ACCESS_KEY_ID" = 'backend_access_key_id' ] || { echo "✗ AWS_ACCESS_KEY_ID not set"; exit 1; }
+          [ "$AWS_SECRET_ACCESS_KEY" = 'backend_secret_access_key' ] || { echo "✗ AWS_SECRET_ACCESS_KEY not set"; exit 1; }
+          [ "$STACKIT_SERVICE_ACCOUNT_EMAIL" = 'service-account@sa.stackit.cloud' ] || { echo "✗ STACKIT_SERVICE_ACCOUNT_EMAIL not set"; exit 1; }
+          [ "$STACKIT_USE_OIDC" = '1' ] || { echo "✗ STACKIT_USE_OIDC not set"; exit 1; }
+          [ -z "${STACKIT_SERVICE_ACCOUNT_KEY:-}" ] || { echo "✗ STACKIT_SERVICE_ACCOUNT_KEY should not be set"; exit 1; }
+          echo "✓ OIDC credentials exported correctly"
 
   test-validation:
     runs-on: ubuntu-latest

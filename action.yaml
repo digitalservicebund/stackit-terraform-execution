@@ -27,64 +27,52 @@ inputs:
 runs:
   using: "composite"
   steps:
-      # Either STACKIT_SERVICE_ACCOUNT_KEY or STACKIT_SERVICE_ACCOUNT_EMAIL must be set
-    - name: "Check configuration"
+      # Either STACKIT_SERVICE_ACCOUNT_KEY or STACKIT_SERVICE_ACCOUNT_EMAIL must be set.
+      # The matching credentials are exported once, so the terraform steps below
+      # do not need to be duplicated per authentication method.
+    - name: "Configure credentials"
       env:
         STACKIT_SERVICE_ACCOUNT_KEY: ${{ inputs.STACKIT_SERVICE_ACCOUNT_KEY }}
         STACKIT_SERVICE_ACCOUNT_EMAIL: ${{ inputs.STACKIT_SERVICE_ACCOUNT_EMAIL }}
+        BACKEND_ACCESS_KEY_ID: ${{ inputs.BACKEND_ACCESS_KEY_ID }}
+        BACKEND_SECRET_ACCESS_KEY: ${{ inputs.BACKEND_SECRET_ACCESS_KEY }}
       shell: bash
       run: |
+        set -euo pipefail
+
         if [[ -z "${STACKIT_SERVICE_ACCOUNT_KEY:-}" && -z "${STACKIT_SERVICE_ACCOUNT_EMAIL:-}" ]]; then
           echo "Either STACKIT_SERVICE_ACCOUNT_KEY or STACKIT_SERVICE_ACCOUNT_EMAIL must be set"
           exit 1
         fi
 
+        {
+          echo "AWS_ACCESS_KEY_ID=${BACKEND_ACCESS_KEY_ID}"
+          echo "AWS_SECRET_ACCESS_KEY=${BACKEND_SECRET_ACCESS_KEY}"
+
+          if [[ -n "${STACKIT_SERVICE_ACCOUNT_EMAIL:-}" ]]; then
+            echo "STACKIT_SERVICE_ACCOUNT_EMAIL=${STACKIT_SERVICE_ACCOUNT_EMAIL}"
+            echo "STACKIT_USE_OIDC=1"
+          else
+            # the service account key is multiline, so it needs the delimiter syntax
+            echo "STACKIT_SERVICE_ACCOUNT_KEY<<__EOF__"
+            echo "${STACKIT_SERVICE_ACCOUNT_KEY}"
+            echo "__EOF__"
+          fi
+        } >> "${GITHUB_ENV}"
+
     - name: "Install terraform"
       uses: digitalservicebund/setup-terraform@400976bd246bef1e51fe73695fe7658ce484bc43
 
     - name: "Terraform init"
-      if: ${{ inputs.STACKIT_SERVICE_ACCOUNT_EMAIL == '' }}
-      env:
-        AWS_ACCESS_KEY_ID: ${{ inputs.BACKEND_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ inputs.BACKEND_SECRET_ACCESS_KEY }}
-        STACKIT_SERVICE_ACCOUNT_KEY: ${{ inputs.STACKIT_SERVICE_ACCOUNT_KEY }}
-      working-directory: ${{ inputs.project_directory }}${{ inputs.terraform_module }}
-      shell: bash
-      run: terraform init -input=false
-
-    - name: "Terraform init"
-      if: ${{ inputs.STACKIT_SERVICE_ACCOUNT_EMAIL != '' }}
-      env:
-        AWS_ACCESS_KEY_ID: ${{ inputs.BACKEND_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ inputs.BACKEND_SECRET_ACCESS_KEY }}
-        STACKIT_SERVICE_ACCOUNT_EMAIL: ${{ inputs.STACKIT_SERVICE_ACCOUNT_EMAIL }}
-        STACKIT_USE_OIDC: "1"
       working-directory: ${{ inputs.project_directory }}${{ inputs.terraform_module }}
       shell: bash
       run: terraform init -input=false
 
     - name: "Terraform plan"
-      if: ${{ github.event_name == 'pull_request' && inputs.STACKIT_SERVICE_ACCOUNT_EMAIL == '' }}
-      env:
-        AWS_ACCESS_KEY_ID: ${{ inputs.BACKEND_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ inputs.BACKEND_SECRET_ACCESS_KEY }}
-        STACKIT_SERVICE_ACCOUNT_KEY: ${{ inputs.STACKIT_SERVICE_ACCOUNT_KEY }}
+      if: ${{ github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' }}
       working-directory: ${{ inputs.project_directory }}${{ inputs.terraform_module }}
       shell: bash
-      run: |
-        terraform plan -lock=false -out .planfile
-
-    - name: "Terraform plan"
-      if: ${{ github.event_name == 'pull_request' && inputs.STACKIT_SERVICE_ACCOUNT_EMAIL != '' }}
-      env:
-        AWS_ACCESS_KEY_ID: ${{ inputs.BACKEND_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ inputs.BACKEND_SECRET_ACCESS_KEY }}
-        STACKIT_SERVICE_ACCOUNT_EMAIL: ${{ inputs.STACKIT_SERVICE_ACCOUNT_EMAIL }}
-        STACKIT_USE_OIDC: "1"
-      working-directory: ${{ inputs.project_directory }}${{ inputs.terraform_module }}
-      shell: bash
-      run: |
-        terraform plan -lock=false -out .planfile
+      run: terraform plan -lock=false -out .planfile
 
     - name: "Post PR comment"
       if: ${{ github.event_name == 'pull_request' }}
@@ -97,7 +85,8 @@ runs:
         skip-empty: true
 
     - name: "Prevent merge if files are recreated by terraform"
-      if: ${{ github.event_name == 'pull_request' }}
+      if: ${{ github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' }}
+      working-directory: ${{ inputs.project_directory }}${{ inputs.terraform_module }}
       shell: bash
       run: |
         if terraform show -no-color .planfile | grep -Fq "# DO NOT EDIT MANUALLY"; then
@@ -106,24 +95,7 @@ runs:
         fi
 
     - name: "Terraform apply"
-      if: ${{ github.ref == 'refs/heads/main' && inputs.STACKIT_SERVICE_ACCOUNT_EMAIL == ''}}
-      env:
-        AWS_ACCESS_KEY_ID: ${{ inputs.BACKEND_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ inputs.BACKEND_SECRET_ACCESS_KEY }}
-        STACKIT_SERVICE_ACCOUNT_KEY: ${{ inputs.STACKIT_SERVICE_ACCOUNT_KEY }}
+      if: ${{ github.ref == 'refs/heads/main' }}
       working-directory: ${{ inputs.project_directory }}${{ inputs.terraform_module }}
       shell: bash
-      run: |
-        terraform apply -auto-approve
-
-    - name: "Terraform apply"
-      if: ${{ github.ref == 'refs/heads/main' && inputs.STACKIT_SERVICE_ACCOUNT_EMAIL != ''}}
-      env:
-        AWS_ACCESS_KEY_ID: ${{ inputs.BACKEND_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ inputs.BACKEND_SECRET_ACCESS_KEY }}
-        STACKIT_SERVICE_ACCOUNT_EMAIL: ${{ inputs.STACKIT_SERVICE_ACCOUNT_EMAIL }}
-        STACKIT_USE_OIDC: "1"
-      working-directory: ${{ inputs.project_directory }}${{ inputs.terraform_module }}
-      shell: bash
-      run: |
-        terraform apply -auto-approve
+      run: terraform apply -auto-approve
