@@ -55,7 +55,7 @@ A GitHub Action for executing Terraform operations (plan and apply) on STACKIT i
 1. **Install Terraform**: Installs Terraform based on a .terraform_version file using the `digitalservicebund/setup-terraform` action
 2. **Setup STACKIT Credentials**: Writes the STACKIT service account key to a temporary file for authentication
 3. **Terraform Init**: Initializes the Terraform working directory with backend configuration
-4. **Terraform Plan** (Pull Request only):Generates an execution plan showing what changes will be made
+4. **Terraform Plan** (Pull Request and workflow dispatch): Generates an execution plan showing what changes will be made
 5. **Post PR Comment** (Pull Request only): Automatically posts the Terraform plan as a comment on the pull request for review
 6. **Prevent merge if files are recreated by terraform** (Pull Request only): Checks that no files would be changed in the directory when this plan is applied.
 7. **Terraform Apply** (Main branch only): Automatically applies the changes to your STACKIT infrastructure when merged to main
@@ -63,6 +63,7 @@ A GitHub Action for executing Terraform operations (plan and apply) on STACKIT i
 ### Execution Conditions
 
 - **Pull Requests**: Runs `terraform plan` and posts results as a comment for review
+- **Workflow Dispatch**: Runs `terraform plan` for manually triggered workflows
 - **Main Branch**: Runs `terraform apply` automatically
 
 ## License
