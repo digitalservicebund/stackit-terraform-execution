@@ -61,7 +61,7 @@ runs:
         } >> "${GITHUB_ENV}"
 
     - name: "Install terraform"
-      uses: digitalservicebund/setup-terraform@400976bd246bef1e51fe73695fe7658ce484bc43
+      uses: digitalservicebund/setup-terraform@8fdf60f18fa72ee375e5ac0e03a497d414a43fde
 
     - name: "Terraform init"
       working-directory: ${{ inputs.project_directory }}${{ inputs.terraform_module }}
