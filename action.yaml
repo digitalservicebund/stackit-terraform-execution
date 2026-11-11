@@ -24,6 +24,11 @@ inputs:
     description: "Secret Access Key for the terraform backend bucket"
     required: true
 
+outputs:
+  plan_exitcode:
+    description: "Exit code of 'terraform plan -detailed-exitcode': 0 = no changes, 2 = changes present. Empty if plan did not run."
+    value: ${{ steps.plan.outputs.exitcode }}
+
 runs:
   using: "composite"
   steps:
@@ -68,11 +73,20 @@ runs:
       shell: bash
       run: terraform init -input=false
 
+    # -detailed-exitcode: 0 = no changes, 1 = error, 2 = changes present.
+    # Exit code 2 must not fail the step, so it is captured and exposed as output.
     - name: "Terraform plan"
+      id: plan
       if: ${{ github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' }}
       working-directory: ${{ inputs.project_directory }}${{ inputs.terraform_module }}
       shell: bash
-      run: terraform plan -lock=false -out .planfile
+      run: |
+        exitcode=0
+        terraform plan -lock=false -detailed-exitcode -out .planfile || exitcode=$?
+        echo "exitcode=${exitcode}" >> "${GITHUB_OUTPUT}"
+        if [[ "${exitcode}" -ne 0 && "${exitcode}" -ne 2 ]]; then
+          exit "${exitcode}"
+        fi
 
     - name: "Post PR comment"
       if: ${{ github.event_name == 'pull_request' }}
