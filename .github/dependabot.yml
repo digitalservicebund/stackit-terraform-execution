@@ -6,6 +6,8 @@ updates:
       interval: "weekly"
     cooldown:
       default-days: 7
+      exclude:
+        - "digitalservicebund/*"
 
   - package-ecosystem: "terraform"
     directory: "/test"
