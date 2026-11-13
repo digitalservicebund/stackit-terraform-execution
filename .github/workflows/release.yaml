@@ -16,9 +16,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Semantic Release
-        uses: digitalservicebund/semantic-release-action@e3acd4f7485a1c60f6c67b9c7257297461c16008 # v1.0.0
+        uses: digitalservicebund/semantic-release-action@e3acd4f7485a1c60f6c67b9c7257297461c16008 # v1.0.1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
